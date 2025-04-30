@@ -1,5 +1,7 @@
 from fastapi import FastAPI
-from crawler import press
+from pydantic.v1 import BaseModel
+
+from crawler import crawl
 
 app = FastAPI()
 
@@ -34,10 +36,16 @@ async def crawl_press():
 
 
     result = []
-    for v in oid:
-        result.append({
-            'press': v['press'],
-            'articles': press.crawl_press(f'https://news.naver.com/main/list.naver?={v["oid"]}&date=20250428')
-        })
+
+    result.append({
+        'press': 'kbs',
+        'articles': crawl.crawling(f'https://news.naver.com/main/list.naver?=056&date=20250428')
+    })
+
+    # for v in oid:
+    #     result.append({
+    #         'press': v['press'],
+    #         'articles': crawl.crawling_all(f'https://news.naver.com/main/list.naver?={v["oid"]}&date=20250428')
+    #     })
 
     return {"message": result}
