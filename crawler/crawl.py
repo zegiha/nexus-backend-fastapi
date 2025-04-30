@@ -1,24 +1,36 @@
+import time
+
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.options import Options
 import json
-
-from selenium.webdriver.common.devtools.v133.network import WebSocketCreated
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from sqlalchemy.ext.asyncio import AsyncSession
+from models.articles import Articles
+from datetime import datetime
 
-def crawling(url: str):
-    res = requests.get(url)
+
+async def crawling(url: str, create_date: datetime, db: AsyncSession):
+    headers = {
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
+    }
+    res = requests.get(url, headers=headers)
     soup = BeautifulSoup(res.text, "html.parser")
-    headline = crawling_all(soup.select_one('ul.type06_headline'))
-    normal = crawling_all(soup.select_one('ul.type06'))
+    headline = await crawling_all(soup.select_one('ul.type06_headline'), create_date, db)
+    normal = await crawling_all(soup.select_one('ul.type06'), create_date, db)
 
     return {'headline': headline, 'normal': normal}
 
-def crawling_all(raw_data):
+async def crawling_all(
+        raw_data,
+        create_date: datetime,
+        db: AsyncSession,
+):
     if raw_data is None:
         return None
 
@@ -53,18 +65,36 @@ def crawling_all(raw_data):
                     article['originalArticleUrl'] = a['href']
                     article.update(crawling_detail(article['originalArticleUrl']))
 
+
+            db.add(Articles(
+                title=article['title'],
+                contents=article['contents'],
+                original_article_url=article['originalArticleUrl'],
+                summary_img_url=article.get('summary_img', None),
+                img_url=article.get('imgUrl', None),
+                img_desc=article.get('imgDesc', None),
+                video_url=article.get('video_url', None),
+                create_date=create_date,
+            ))
+
+            await db.commit()
+
             result.append(article)
-            print(len(result))
 
     return result
 
 def crawling_detail(url):
     res = {}
 
+    # Chrome 옵션 설정
     chrome_options = Options()
     chrome_options.add_argument('--headless')
     chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
+
+    # Chrome 드라이버 초기화
     driver = webdriver.Chrome(options=chrome_options)
+
+    # 페이지 로드 및 로그 수집
     driver.get(url)
 
     try:
@@ -88,25 +118,21 @@ def crawling_detail(url):
             for v in desc:
                 res['imgDesc'] = v.text
 
-        if res.get('imgUrl') is None:
-            # video 태그도 로드될 때까지 기다리기 (선택적)
-            videos = WebDriverWait(driver, 5).until(
-                EC.presence_of_all_elements_located((By.TAG_NAME, 'video'))
-            )
-            if len(videos) > 0:
-                for v in videos:
-                    ActionChains(driver).move_to_element(v).click().perform()
-                    WebDriverWait(driver, 10).until(lambda d: len(d.get_log('performance')) > 0)
-                    logs = driver.get_log('performance')
+        sw = True
+        time.sleep(7)
+        logs = driver.get_log('performance')
 
-                    for entry in logs:
-                        log = json.loads(entry['message'])['message']
-                        if log['method'] == 'Network.responseReceived':
-                            video_json_url = log['params']['response']['url']
-                            if 'https://apis.naver.com/rmcnmv/rmcnmv/vod/play/v2.0/' in video_json_url and '?key' in video_json_url:
-                                video_json = requests.get(video_json_url).json()
-                                res['video_url'] = get_video_url(video_json)
-                                break
+        for entry in logs:
+            log = json.loads(entry['message'])['message']
+            if log['method'] == 'Network.responseReceived':
+                video_json_url = log['params']['response']['url']
+                if 'https://apis.naver.com/rmcnmv/rmcnmv/vod/play/v2.0/' in video_json_url and '?key' in video_json_url:
+                    video_json = requests.get(video_json_url).json()
+                    res['video_url'] = get_video_url(video_json)
+                    sw = False
+                    break
+        if(sw):
+            print('영상이 수집되지 않았을 수 있습니다')
 
     except Exception as e:
         print("Error occurred:", e)
@@ -124,6 +150,5 @@ def get_video_url(video_json):
         if v['encodingOption']['width'] == 1280 and v['bitrate']['video'] > max_bitrate:
             max_bitrate = v['bitrate']['video']
             res = v['source']
-
 
     return res
