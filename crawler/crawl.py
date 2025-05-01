@@ -15,20 +15,48 @@ from models.articles import Articles
 from datetime import datetime
 
 
-async def crawling(url: str, create_date: datetime, db: AsyncSession):
-    headers = {
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
-    }
-    res = requests.get(url, headers=headers)
-    soup = BeautifulSoup(res.text, "html.parser")
-    headline = await crawling_all(soup.select_one('ul.type06_headline'), create_date, db)
-    normal = await crawling_all(soup.select_one('ul.type06'), create_date, db)
+async def crawling(url: str, create_date: datetime, press: str, db: AsyncSession):
+    max_page = 17
+    page = 17
+
+    headline = []
+    normal = []
+
+    while page <= max_page:
+        headers = {
+            'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
+        }
+        res = requests.get(url+f'&page={page}', headers=headers)
+        soup = BeautifulSoup(res.text, "html.parser")
+        max_page = get_max_page(soup.select_one('div.paging'))
+        print(f'max_page : {max_page}')
+        print(f'page : {page}')
+        new_headline = await crawling_all(soup.select_one('ul.type06_headline'), create_date, press, db)
+        if new_headline:
+            for v in new_headline: headline.append(v)
+        new_normal = await crawling_all(soup.select_one('ul.type06'), create_date, press, db)
+        if new_normal:
+            for v in new_normal: normal.append(v)
+
+        page += 1
 
     return {'headline': headline, 'normal': normal}
+
+def get_max_page(paging):
+    pages = paging.select('a')
+    select_page = paging.select_one('strong')
+    if pages[-1].get_text(strip=True) == '다음':
+        print(f'returning contents: {pages[-2].get_text(strip=True)}')
+        res = pages[-2].get_text(strip=True)
+    else:
+        print(f'returning contents: {pages[-1].get_text(strip=True)}')
+        res = pages[-1].get_text(strip=True)
+    return max(int(res), int(select_page.get_text(strip=True)))
 
 async def crawling_all(
         raw_data,
         create_date: datetime,
+        press: str,
         db: AsyncSession,
 ):
     if raw_data is None:
@@ -66,20 +94,22 @@ async def crawling_all(
                     article.update(crawling_detail(article['originalArticleUrl']))
 
 
-            db.add(Articles(
-                title=article['title'],
-                contents=article['contents'],
-                original_article_url=article['originalArticleUrl'],
-                summary_img_url=article.get('summary_img', None),
-                img_url=article.get('imgUrl', None),
-                img_desc=article.get('imgDesc', None),
-                video_url=article.get('video_url', None),
-                create_date=create_date,
-            ))
+            if all(key in article for key in ['contents', 'title', 'originalArticleUrl']):
+                db.add(Articles(
+                    title=article['title'],
+                    contents=article['contents'],
+                    original_article_url=article['originalArticleUrl'],
+                    summary_img_url=article.get('summary_img', None),
+                    img_url=article.get('imgUrl', None),
+                    img_desc=article.get('imgDesc', None),
+                    video_url=article.get('video_url', None),
+                    create_date=create_date,
+                ))
 
-            await db.commit()
+                await db.commit()
 
-            result.append(article)
+                result.append(article)
+
 
     return result
 
@@ -103,7 +133,7 @@ def crawling_detail(url):
         )
         res['category'] = category.text
         # article 태그가 로드될 때까지 최대 10초 기다림
-        article = WebDriverWait(driver, 2).until(
+        article = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, 'article'))
         )
 

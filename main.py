@@ -21,39 +21,30 @@ async def test():
 
 @app.get('/crawl/{target_date}')
 async def crawl_route(target_date: str, db: AsyncSession = Depends(get_db_session)):
-    oid = [
-        '056',
-        '055',
-        '214',
-        '437',
-        '052',
-        '001',
-        '023',
-        '469',
-        '025',
-        '020',
-        '032',
-        '028',
-        '009',
-        '586',
-    ]
-
     # oid = [
-    #     {'press': 'kbs', 'oid': '056'},
-    #     {'press': 'sbs', 'oid': '055'},
-    #     {'press': 'mbc', 'oid': '214'},
-    #     {'press': 'jtbc', 'oid': '437'},
-    #     {'press': 'ytn', 'oid': '052'},
-    #     {'press': '연합뉴스', 'oid': '001'},
-    #     {'press': '조선일보', 'oid': '023'},
-    #     {'press': '한국일보', 'oid': '469'},
-    #     {'press': '중앙일보', 'oid': '025'},
-    #     {'press': '동아일보', 'oid': '020'},
-    #     {'press': '경향신문', 'oid': '032'},
-    #     {'press': '한겨레', 'oid': '028'},
-    #     {'press': '매일 경제', 'oid': '009'},
-    #     {'press': '시사저널', 'oid': '586'},
+    #     '056',
+    #     '055',
+    #     '214',
+    #     '437',
+    #     '052',
+    #     '001',
+    #     '023',
+    #     '469',
+    #     '025',
+    #     '020',
+    #     '032',
+    #     '028',
+    #     '009',
+    #     '586',
     # ]
+
+    # 3사 + ytn만
+    oid = [
+        {'press': 'KBS', 'oid': '056'},
+        {'press': 'SBS', 'oid': '055'},
+        {'press': 'MBC', 'oid': '214'},
+        {'press': 'YTN', 'oid': '052'},
+    ]
 
     try:
         date_obj = datetime.strptime(target_date, "%Y%m%d")
@@ -64,11 +55,13 @@ async def crawl_route(target_date: str, db: AsyncSession = Depends(get_db_sessio
 
     for v in oid:
         new_data = await crawl.crawling(
-            f'https://news.naver.com/main/list.naver?={v}&date={target_date}',
+            f'https://news.naver.com/main/list.naver?mode=LSD&mid=sec&oid={v["oid"]}&date={target_date}',
             date_obj,
+            v['press'],
             db=db
         )
         result.append({
+            'press': v['press'],
             'articles': new_data
         })
 
