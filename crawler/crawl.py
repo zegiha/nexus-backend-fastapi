@@ -1,5 +1,5 @@
 import time
-
+import sys
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -125,17 +125,27 @@ def crawling_detail(url):
 
     # Chrome 옵션 설정
     chrome_options = Options()
-    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--headless=new')
     chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
 
-    service = Service(ChromeDriverManager().install())
+    chrome_options.add_argument('--disable-software-rasterizer')
+    chrome_options.add_argument('--disable-features=VizDisplayCompositor')
+    chrome_options.add_argument('--single-process')
+
+    chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL', 'browser': 'ALL'})
+
+    service = Service(
+        ChromeDriverManager().install(),
+        log_output=sys.stdout,
+        service_args=['--verbose'],
+    )
 
     # Chrome 드라이버 초기화
     driver = webdriver.Chrome(
         service=service,
-        options=chrome_options
+        options=chrome_options,
     )
 
     driver.set_page_load_timeout(1000)
