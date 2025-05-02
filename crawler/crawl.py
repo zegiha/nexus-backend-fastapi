@@ -11,9 +11,8 @@ import json
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from sqlalchemy.orm import Session
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
-
+from webdriver_manager.chrome import ChromeDriverManager
 from models.articles import Articles
 from datetime import datetime
 
@@ -131,7 +130,7 @@ def crawling_detail(url):
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
 
-    service = Service(executable_path='/home/ubuntu/chromedriver-linux64')
+    service = Service(ChromeDriverManager().install())
 
     # Chrome 드라이버 초기화
     driver = webdriver.Chrome(
