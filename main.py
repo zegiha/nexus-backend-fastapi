@@ -19,23 +19,6 @@ async def test():
 
 @app.get('/crawl/{target_date}')
 async def crawl_route(target_date: str):
-    # oid = [
-    #     '056',
-    #     '055',
-    #     '214',
-    #     '437',
-    #     '052',
-    #     '001',
-    #     '023',
-    #     '469',
-    #     '025',
-    #     '020',
-    #     '032',
-    #     '028',
-    #     '009',
-    #     '586',
-    # ]
-
     # 3사 + ytn만
     oid = [
         {'press': 'KBS', 'oid': '056'},

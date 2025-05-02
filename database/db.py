@@ -28,8 +28,6 @@ SessionLocal = sessionmaker(
 # 모델 정의를 위한 Base 클래스
 Base = declarative_base()
 
-# db.py 이어서
-
 def get_db_session():
     db = SessionLocal()
     try:

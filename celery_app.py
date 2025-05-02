@@ -15,5 +15,4 @@ celery_app.conf.update(
     result_backend_transport_options={'visibility_timeout': 7200},
 )
 
-# ✅ Task 모듈 import (중요!)
 import background.task

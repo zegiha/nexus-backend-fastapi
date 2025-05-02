@@ -30,7 +30,7 @@ async def crawling(
         headers = {
             'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
         }
-        res = requests.get(url + f'&page={page}', headers=headers, timeout=None)  # 타임아웃을 None으로 설정
+        res = requests.get(url + f'&page={page}', headers=headers, timeout=None)
         soup = BeautifulSoup(res.text, "html.parser")
         max_page = get_max_page(soup.select_one('div.paging'))
         print(f'max_page : {max_page}')
@@ -125,9 +125,13 @@ def crawling_detail(url):
     chrome_options = Options()
     chrome_options.add_argument('--headless')
     chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
 
     # Chrome 드라이버 초기화
-    driver = webdriver.Chrome(options=chrome_options)
+    driver = webdriver.Chrome(
+        options=chrome_options
+    )
 
     # 페이지 로드 및 로그 수집
     driver.get(url)
