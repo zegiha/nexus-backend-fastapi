@@ -1,9 +1,7 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from datetime import datetime
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.asyncio import AsyncSession
-from database.db import get_db_session
 from crawler import crawl
+from background.task import run_crawling
 
 app = FastAPI()
 
@@ -20,7 +18,7 @@ async def test():
     return {"message": crawl.crawling_detail('https://n.news.naver.com/mnews/article/660/0000084394')}
 
 @app.get('/crawl/{target_date}')
-async def crawl_route(target_date: str, db: AsyncSession = Depends(get_db_session)):
+async def crawl_route(target_date: str):
     # oid = [
     #     '056',
     #     '055',
@@ -54,15 +52,12 @@ async def crawl_route(target_date: str, db: AsyncSession = Depends(get_db_sessio
     result = []
 
     for v in oid:
-        new_data = await crawl.crawling(
+        task = run_crawling.delay(
             f'https://news.naver.com/main/list.naver?mode=LSD&mid=sec&oid={v["oid"]}&date={target_date}',
             date_obj,
             v['press'],
-            db=db
         )
-        result.append({
-            'press': v['press'],
-            'articles': new_data
-        })
+
+        result.append(f'{v["press"]}의 크롤링 작업이 백그라운드에서 시작됐습니다, task_id: ${task}')
 
     return {"message": result}

@@ -10,14 +10,18 @@ from selenium.webdriver.chrome.options import Options
 import json
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from models.articles import Articles
 from datetime import datetime
 
-
-async def crawling(url: str, create_date: datetime, press: str, db: AsyncSession):
-    max_page = 17
-    page = 17
+async def crawling(
+        url: str,
+        create_date: datetime,
+        press: str,
+        db: Session,
+):
+    max_page = 1
+    page = 1
 
     headline = []
     normal = []
@@ -26,7 +30,7 @@ async def crawling(url: str, create_date: datetime, press: str, db: AsyncSession
         headers = {
             'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
         }
-        res = requests.get(url+f'&page={page}', headers=headers)
+        res = requests.get(url + f'&page={page}', headers=headers, timeout=None)  # 타임아웃을 None으로 설정
         soup = BeautifulSoup(res.text, "html.parser")
         max_page = get_max_page(soup.select_one('div.paging'))
         print(f'max_page : {max_page}')
@@ -42,14 +46,15 @@ async def crawling(url: str, create_date: datetime, press: str, db: AsyncSession
 
     return {'headline': headline, 'normal': normal}
 
+
 def get_max_page(paging):
     pages = paging.select('a')
     select_page = paging.select_one('strong')
     if pages[-1].get_text(strip=True) == '다음':
-        print(f'returning contents: {pages[-2].get_text(strip=True)}')
+        # print(f'returning contents: {pages[-2].get_text(strip=True)}')
         res = pages[-2].get_text(strip=True)
     else:
-        print(f'returning contents: {pages[-1].get_text(strip=True)}')
+        # print(f'returning contents: {pages[-1].get_text(strip=True)}')
         res = pages[-1].get_text(strip=True)
     return max(int(res), int(select_page.get_text(strip=True)))
 
@@ -57,7 +62,7 @@ async def crawling_all(
         raw_data,
         create_date: datetime,
         press: str,
-        db: AsyncSession,
+        db: Session,
 ):
     if raw_data is None:
         return None
@@ -106,7 +111,7 @@ async def crawling_all(
                     create_date=create_date,
                 ))
 
-                await db.commit()
+                db.commit()
 
                 result.append(article)
 
@@ -128,12 +133,12 @@ def crawling_detail(url):
     driver.get(url)
 
     try:
-        category = WebDriverWait(driver, 10).until(
+        category = WebDriverWait(driver, 1000).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'li.Nlist_item._LNB_ITEM.is_active > a > span'))
         )
         res['category'] = category.text
         # article 태그가 로드될 때까지 최대 10초 기다림
-        article = WebDriverWait(driver, 10).until(
+        article = WebDriverWait(driver, 1000).until(
             EC.presence_of_element_located((By.TAG_NAME, 'article'))
         )
 
@@ -148,7 +153,6 @@ def crawling_detail(url):
             for v in desc:
                 res['imgDesc'] = v.text
 
-        sw = True
         time.sleep(7)
         logs = driver.get_log('performance')
 
@@ -159,10 +163,7 @@ def crawling_detail(url):
                 if 'https://apis.naver.com/rmcnmv/rmcnmv/vod/play/v2.0/' in video_json_url and '?key' in video_json_url:
                     video_json = requests.get(video_json_url).json()
                     res['video_url'] = get_video_url(video_json)
-                    sw = False
                     break
-        if(sw):
-            print('영상이 수집되지 않았을 수 있습니다')
 
     except Exception as e:
         print("Error occurred:", e)

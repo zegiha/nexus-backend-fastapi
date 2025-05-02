@@ -1,8 +1,7 @@
-# db.py
 import os
 from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from fastapi import Depends
 
 load_dotenv()
@@ -14,15 +13,15 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT", 3306)
 DB_NAME = os.getenv("DB_NAME")
 
-DATABASE_URL = f"mysql+asyncmy://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# 비동기 엔진 생성
-engine = create_async_engine(DATABASE_URL, echo=False)
+# 동기 엔진 생성
+engine = create_engine(DATABASE_URL, echo=False)
 
 # 세션 클래스 생성
-AsyncSessionLocal = sessionmaker(
+SessionLocal = sessionmaker(
     bind=engine,
-    class_=AsyncSession,
+    class_=Session,
     expire_on_commit=False,
 )
 
@@ -31,6 +30,9 @@ Base = declarative_base()
 
 # db.py 이어서
 
-async def get_db_session():
-    async with AsyncSessionLocal() as session:
-        yield session
+def get_db_session():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
