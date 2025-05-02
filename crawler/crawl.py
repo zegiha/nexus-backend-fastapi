@@ -138,6 +138,8 @@ def crawling_detail(url):
         options=chrome_options
     )
 
+    driver.set_page_load_timeout(1000)
+
     # 페이지 로드 및 로그 수집
     driver.get(url)
 
@@ -145,6 +147,7 @@ def crawling_detail(url):
         category = WebDriverWait(driver, 1000).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'li.Nlist_item._LNB_ITEM.is_active > a > span'))
         )
+        print('불러와짐 ㅠㅠㅠㅠ')
         res['category'] = category.text
         # article 태그가 로드될 때까지 최대 10초 기다림
         article = WebDriverWait(driver, 1000).until(
