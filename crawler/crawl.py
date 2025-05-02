@@ -11,6 +11,8 @@ import json
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from sqlalchemy.orm import Session
+from webdriver_manager.chrome import ChromeDriverManager
+
 from models.articles import Articles
 from datetime import datetime
 
@@ -130,6 +132,7 @@ def crawling_detail(url):
 
     # Chrome 드라이버 초기화
     driver = webdriver.Chrome(
+        executable_path='/home/ubuntu/chromedriver-linux64',
         options=chrome_options
     )
 
