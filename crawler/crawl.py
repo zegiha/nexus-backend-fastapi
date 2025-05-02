@@ -138,8 +138,8 @@ def crawling_detail(url):
 
     service = Service(
         ChromeDriverManager().install(),
-        log_output=sys.stdout,
-        service_args=['--verbose'],
+        # log_output=sys.stdout,
+        # service_args=['--verbose'],
     )
 
     # Chrome 드라이버 초기화
