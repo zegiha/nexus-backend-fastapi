@@ -6,6 +6,7 @@ from datetime import datetime
 import httpx
 import random
 import time
+import re
 
 async def test(
         url: str,
@@ -13,14 +14,8 @@ async def test(
 ):
     async with httpx.AsyncClient() as client:
         try:
-            res = await client.get(url,timeout=None)
-            if res.status_code == 200:
-                soup = BeautifulSoup(res.content, "html.parser")
-                c = soup.select_one('li.Nlist_item._LNB_ITEM.is_active > a > span')
-                print(c)
-                return 'success'
-            else:
-                return 'fetching failed'
+            data = await crawling_detail(url)
+            return data
         except httpx.RequestError as e:
             print(e)
             return 'request failed'
@@ -54,6 +49,8 @@ async def crawling(
             for v in new_normal: normal.append(v)
 
         page += 1
+
+
 
     return {'headline': headline, 'normal': normal}
 
@@ -110,6 +107,8 @@ async def crawling_all(
                     detail = await crawling_detail(article['originalArticleUrl'])
                     if detail == {}:
                         detail = await crawling_detail(article['originalArticleUrl'])
+                    if detail is None:
+                        detail = {}
                     article.update(detail)
 
 
@@ -162,12 +161,15 @@ async def crawling_detail(url):
             res = await client.get(url, headers=random.choice(headers))
             if res.status_code == 200:
                 soup = BeautifulSoup(res.content, 'html.parser')
+                print(soup)
                 category = get_category(soup)
                 if(category is None):
                     print(f'category is None: {url}')
                 contents = soup.select_one('article').get_text(strip=True)
                 photo_url, photo_desc = get_photo_info(soup)
                 video_url = await get_video_url(soup)
+
+                time.sleep(1)
 
                 return {
                     'category': category,
@@ -181,7 +183,10 @@ async def crawling_detail(url):
                 print(f'crawling_detail fetching failed with status code: {res.status_code} for URL: {url}')
                 # 응답 내용도 출력 (원하는 경우)
                 print(f'Response content: {res.text[:500]}')  # 처음 500글자만 출력
-                return {}
+                if "Redirecting" in res.text:
+                    return None
+                else:
+                    return {}
         except httpx.RequestError as e:
             time.sleep(20)
             print(f'crawling_detail request failed: {e}')
