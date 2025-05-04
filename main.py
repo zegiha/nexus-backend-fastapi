@@ -15,7 +15,7 @@ async def say_hello(name: str):
 
 @app.get('/test')
 async def test():
-    data = await crawl.test('https://m.sports.naver.com/kbaseball/article/052/0002188831')
+    data = await crawl.test('https://n.news.naver.com/mnews/article/052/0002188955')
     return {"message": data}
 
 @app.get('/crawl/{target_date}')

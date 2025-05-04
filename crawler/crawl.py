@@ -212,6 +212,8 @@ def get_photo_info(soup):
 
         if img_tag and img_tag.get('src'):
             img_url = img_tag.get('src')
+            if img_url is None:
+                img_url = img_tag.get('data-src')
 
         if desc_tag:
             img_desc = desc_tag.get_text(strip=True)
