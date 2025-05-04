@@ -247,10 +247,12 @@ async def get_video_url(soup):
 
                 video_url = None
                 max_bitrate = 0
+                max_width = 0
                 video_json = res.json()
                 for v in video_json['videos']['list']:
-                    if v['encodingOption']['width'] == 1280 and v['bitrate']['video'] > max_bitrate:
+                    if v['encodingOption']['width'] >= max_width and v['bitrate']['video'] > max_bitrate:
                         max_bitrate = v['bitrate']['video']
+                        max_width = v['width']
                         video_url = v['source']
 
                 return video_url
