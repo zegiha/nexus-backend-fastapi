@@ -116,7 +116,8 @@ async def crawling_all(
                 if a:
                     article['title'] = a.get_text(strip=True)
                     article['originalArticleUrl'] = a['href']
-                    article.update(crawling_detail(article['originalArticleUrl']))
+                    detail = await crawling_detail(article['originalArticleUrl'])
+                    article.update(detail)
 
 
             if all(key in article for key in ['contents', 'title', 'originalArticleUrl']):
