@@ -150,7 +150,10 @@ async def crawling_detail(url):
                     'video_url': video_url,
                 }
             else:
-                print('crawling_detail fetching failed')
+                # 상태 코드 출력
+                print(f'crawling_detail fetching failed with status code: {res.status_code} for URL: {url}')
+                # 응답 내용도 출력 (원하는 경우)
+                print(f'Response content: {res.text[:500]}')  # 처음 500글자만 출력
                 return {}
         except httpx.RequestError as e:
             print(f'crawling_detail request failed: {e}')
