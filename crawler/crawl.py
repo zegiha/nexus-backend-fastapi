@@ -15,6 +15,36 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from models.articles import Articles
 from datetime import datetime
+import httpx
+
+async def test(
+        url: str,
+        # db: Session
+):
+    headers = {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
+    }
+    async with httpx.AsyncClient(headers=headers) as client:
+        try:
+            res = await client.get(url, headers=headers, timeout=None)
+            if res.status_code == 200:
+                max_bitrate = 0
+                video_url = None
+                video_json = res.json()
+                for v in video_json['videos']['list']:
+                    if v['encodingOption']['width'] == 1280 and v['bitrate']['video'] > max_bitrate:
+                        max_bitrate = v['bitrate']['video']
+                        video_url = v['source']
+
+                return video_url
+            else:
+                return 'fetching failed'
+        except httpx.RequestError as e:
+            print(e)
+            return 'request failed'
 
 async def crawling(
         url: str,
@@ -107,8 +137,8 @@ async def crawling_all(
                     contents=article['contents'],
                     original_article_url=article['originalArticleUrl'],
                     summary_img_url=article.get('summary_img', None),
-                    img_url=article.get('imgUrl', None),
-                    img_desc=article.get('imgDesc', None),
+                    img_url=article.get('img_url', None),
+                    img_desc=article.get('img_desc', None),
                     video_url=article.get('video_url', None),
                     create_date=create_date,
                 ))
@@ -120,88 +150,86 @@ async def crawling_all(
 
     return result
 
-def crawling_detail(url):
-    res = {}
+async def crawling_detail(url):
+    async with httpx.AsyncClient() as client:
+        try:
+            res = await client.get(url)
+            if res.status_code == 200:
+                soup = BeautifulSoup(res.content, 'html.parser')
+                category = soup.select_one('li.Nlist_item._LNB_ITEM.is_active > a > span').get_text(strip=True)
+                contents = soup.select_one('article').get_text(strip=True)
+                photo_url, photo_desc = get_photo_info(soup)
+                video_url = await get_video_url(soup)
 
-    # Chrome 옵션 설정
-    chrome_options = Options()
-    chrome_options.add_argument('--headless=new')
-    chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
+                return {
+                    'category': category,
+                    'contents': contents,
+                    'photo_url': photo_url,
+                    'photo_desc': photo_desc,
+                    'video_url': video_url,
+                }
+            else:
+                print('crawling_detail fetching failed')
+                return {}
+        except httpx.RequestError as e:
+            print(f'crawling_detail request failed: {e}')
+            return {}
 
-    chrome_options.add_argument('--disable-software-rasterizer')
-    chrome_options.add_argument('--disable-features=VizDisplayCompositor')
-    chrome_options.add_argument('--single-process')
+def get_photo_info(soup):
+    img_url = None
+    img_desc = None
 
-    chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL', 'browser': 'ALL'})
+    photo_span = soup.select('span.end_photo_org')
+    for span in photo_span:
+        img_tag = span.select_one('img')
+        desc_tag = span.select_one('em.img_desc')
 
-    service = Service(
-        ChromeDriverManager().install(),
-        # log_output=sys.stdout,
-        # service_args=['--verbose'],
-    )
+        if img_tag and img_tag.get('src'):
+            img_url = img_tag.get('src')
 
-    # Chrome 드라이버 초기화
-    driver = webdriver.Chrome(
-        service=service,
-        options=chrome_options,
-    )
+        if desc_tag:
+            img_desc = desc_tag.get_text(strip=True)
 
-    driver.set_page_load_timeout(1000)
+    return [img_url, img_desc]
 
-    # 페이지 로드 및 로그 수집
-    driver.get(url)
 
-    try:
-        category = WebDriverWait(driver, 1000).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'li.Nlist_item._LNB_ITEM.is_active > a > span'))
-        )
-        print('불러와짐 ㅠㅠㅠㅠ')
-        res['category'] = category.text
-        # article 태그가 로드될 때까지 최대 10초 기다림
-        article = WebDriverWait(driver, 1000).until(
-            EC.presence_of_element_located((By.TAG_NAME, 'article'))
-        )
+async def get_video_url(soup):
+    video_info_tag = soup.select_one('div._VOD_PLAYER_WRAP')
+    if video_info_tag:
+        video_id = video_info_tag.get('data-video-id')
+        video_key = video_info_tag.get('data-inkey')
 
-        res['contents'] = article.text
-        photo_span = article.find_elements(By.CSS_SELECTOR, 'span.end_photo_org')
-        for span in photo_span:
-            img = span.find_elements(By.TAG_NAME, 'img')
-            desc = span.find_elements(By.CSS_SELECTOR, 'em.img_desc')
+        print(f'video_id: {video_id}')
+        print(f'video_key: {video_key}')
 
-            for v in img:
-                res['imgUrl'] = v.get_attribute('src')
-            for v in desc:
-                res['imgDesc'] = v.text
+        video_json_query_url = f'https://apis.naver.com/rmcnmv/rmcnmv/vod/play/v2.0/{video_id}?key={video_key}&sid=2006&nonce=1746276897832&devt=html5_pc&prv=N&aup=N&stpb=N&cpl=ko_KR&env=real&lc=ko_KR&adi=%5B%7B%22adSystem%22%3A%22null%22%7D%5D&adu=%2F'
+        print(f'video_json_query_url: {video_json_query_url}')
+        headers = {
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
+        }
 
-        time.sleep(7)
-        logs = driver.get_log('performance')
+        async with httpx.AsyncClient() as client:
+            try:
+                res = await client.get(video_json_query_url, headers=headers, timeout=None)
 
-        for entry in logs:
-            log = json.loads(entry['message'])['message']
-            if log['method'] == 'Network.responseReceived':
-                video_json_url = log['params']['response']['url']
-                if 'https://apis.naver.com/rmcnmv/rmcnmv/vod/play/v2.0/' in video_json_url and '?key' in video_json_url:
-                    video_json = requests.get(video_json_url).json()
-                    res['video_url'] = get_video_url(video_json)
-                    break
+                if res.status_code != 200:
+                    print(f'get_video_url fetch failed: {res.status_code}')
+                    return None
 
-    except Exception as e:
-        print("Error occurred:", e)
-    finally:
-        driver.quit()
-        return res
+                video_url = None
+                max_bitrate = 0
+                video_json = res.json()
+                for v in video_json['videos']['list']:
+                    if v['encodingOption']['width'] == 1280 and v['bitrate']['video'] > max_bitrate:
+                        max_bitrate = v['bitrate']['video']
+                        video_url = v['source']
 
-def get_video_url(video_json):
-    if video_json is None:
+                return video_url
+            except httpx.RequestError as e:
+                print(f'get_video_url request failed: {e}')
+                return None
+    else:
         return None
-
-    max_bitrate = 0
-    res = None
-    for v in video_json['videos']['list']:
-        if v['encodingOption']['width'] == 1280 and v['bitrate']['video'] > max_bitrate:
-            max_bitrate = v['bitrate']['video']
-            res = v['source']
-
-    return res

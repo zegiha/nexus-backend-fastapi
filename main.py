@@ -15,7 +15,8 @@ async def say_hello(name: str):
 
 @app.get('/test')
 async def test():
-    return {"message": crawl.crawling_detail('https://n.news.naver.com/mnews/article/660/0000084394')}
+    data = await crawl.crawling_detail('https://n.news.naver.com/article/052/0002188907')
+    return {"message": data}
 
 @app.get('/crawl/{target_date}')
 async def crawl_route(target_date: str):
