@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from models.articles import Articles
 from datetime import datetime
 import httpx
+import random
+import time
 
 async def test(
         url: str,
@@ -106,6 +108,8 @@ async def crawling_all(
                     article['title'] = a.get_text(strip=True)
                     article['originalArticleUrl'] = a['href']
                     detail = await crawling_detail(article['originalArticleUrl'])
+                    if detail == {}:
+                        detail = await crawling_detail(article['originalArticleUrl'])
                     article.update(detail)
 
 
@@ -132,7 +136,30 @@ async def crawling_all(
 async def crawling_detail(url):
     async with httpx.AsyncClient() as client:
         try:
-            res = await client.get(url)
+            headers = [
+                {
+                    'Accept': '*/*',
+                    'Accept-Encoding': 'gzip, deflate, br, zstd',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
+                },
+                {
+                    'Accept': '*/*',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+                },
+                {
+                    'Accept': '*/*',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:62.0) Gecko/20100101 Firefox/62.0'
+                },
+                {
+                    'Accept': '*/*',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; ASLJ; CIBA; rv:11.0) like Gecko'
+                }
+            ]
+
+            res = await client.get(url, headers=random.choice(headers))
             if res.status_code == 200:
                 soup = BeautifulSoup(res.content, 'html.parser')
                 category = get_category(soup)
@@ -156,7 +183,11 @@ async def crawling_detail(url):
                 print(f'Response content: {res.text[:500]}')  # 처음 500글자만 출력
                 return {}
         except httpx.RequestError as e:
+            time.sleep(20)
             print(f'crawling_detail request failed: {e}')
+            return {}
+        except Exception as e:
+            print(f'An error occurred: {e}')
             return {}
 
 def get_category(soup):
@@ -190,11 +221,11 @@ async def get_video_url(soup):
         video_id = video_info_tag.get('data-video-id')
         video_key = video_info_tag.get('data-inkey')
 
-        print(f'video_id: {video_id}')
-        print(f'video_key: {video_key}')
+        # print(f'video_id: {video_id}')
+        # print(f'video_key: {video_key}')
 
         video_json_query_url = f'https://apis.naver.com/rmcnmv/rmcnmv/vod/play/v2.0/{video_id}?key={video_key}&sid=2006&nonce=1746276897832&devt=html5_pc&prv=N&aup=N&stpb=N&cpl=ko_KR&env=real&lc=ko_KR&adi=%5B%7B%22adSystem%22%3A%22null%22%7D%5D&adu=%2F'
-        print(f'video_json_query_url: {video_json_query_url}')
+        # print(f'video_json_query_url: {video_json_query_url}')
         headers = {
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br, zstd',
@@ -207,7 +238,7 @@ async def get_video_url(soup):
                 res = await client.get(video_json_query_url, headers=headers, timeout=None)
 
                 if res.status_code != 200:
-                    print(f'get_video_url fetch failed: {res.status_code}')
+                    # print(f'get_video_url fetch failed: {res.status_code}')
                     return None
 
                 video_url = None
@@ -220,7 +251,7 @@ async def get_video_url(soup):
 
                 return video_url
             except httpx.RequestError as e:
-                print(f'get_video_url request failed: {e}')
+                # print(f'get_video_url request failed: {e}')
                 return None
     else:
         return None
