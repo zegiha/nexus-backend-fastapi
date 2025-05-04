@@ -161,7 +161,6 @@ async def crawling_detail(url):
             res = await client.get(url, headers=random.choice(headers))
             if res.status_code == 200:
                 soup = BeautifulSoup(res.content, 'html.parser')
-                print(soup)
                 category = get_category(soup)
                 if(category is None):
                     print(f'category is None: {url}')
