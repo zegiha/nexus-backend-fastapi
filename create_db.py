@@ -1,11 +1,11 @@
-# create_db.py
-import asyncio
 from database.db import engine, Base
 from models.articles import Articles
 
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+def init_db():
+    # 동기식으로 DB 연결을 시작합니다
+    with engine.begin() as conn:
+        # 메타데이터에 정의된 모든 테이블을 생성합니다
+        Base.metadata.create_all(bind=conn)
 
 if __name__ == "__main__":
-    asyncio.run(init_db())
+    init_db()

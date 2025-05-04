@@ -9,25 +9,14 @@ async def test(
         url: str,
         # db: Session
 ):
-    headers = {
-        'Accept': '*/*',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
-    }
-    async with httpx.AsyncClient(headers=headers) as client:
+    async with httpx.AsyncClient() as client:
         try:
-            res = await client.get(url, headers=headers, timeout=None)
+            res = await client.get(url,timeout=None)
             if res.status_code == 200:
-                max_bitrate = 0
-                video_url = None
-                video_json = res.json()
-                for v in video_json['videos']['list']:
-                    if v['encodingOption']['width'] == 1280 and v['bitrate']['video'] > max_bitrate:
-                        max_bitrate = v['bitrate']['video']
-                        video_url = v['source']
-
-                return video_url
+                soup = BeautifulSoup(res.content, "html.parser")
+                c = soup.select_one('li.Nlist_item._LNB_ITEM.is_active > a > span')
+                print(c)
+                return 'success'
             else:
                 return 'fetching failed'
         except httpx.RequestError as e:
@@ -124,6 +113,7 @@ async def crawling_all(
                 db.add(Articles(
                     title=article['title'],
                     contents=article['contents'],
+                    category=article['category'],
                     original_article_url=article['originalArticleUrl'],
                     summary_img_url=article.get('summary_img', None),
                     img_url=article.get('img_url', None),
@@ -145,7 +135,9 @@ async def crawling_detail(url):
             res = await client.get(url)
             if res.status_code == 200:
                 soup = BeautifulSoup(res.content, 'html.parser')
-                category = soup.select_one('li.Nlist_item._LNB_ITEM.is_active > a > span').get_text(strip=True)
+                category = get_category(soup)
+                if(category is None):
+                    print(f'category is None: {url}')
                 contents = soup.select_one('article').get_text(strip=True)
                 photo_url, photo_desc = get_photo_info(soup)
                 video_url = await get_video_url(soup)
@@ -163,6 +155,13 @@ async def crawling_detail(url):
         except httpx.RequestError as e:
             print(f'crawling_detail request failed: {e}')
             return {}
+
+def get_category(soup):
+    e = soup.select_one('li.Nlist_item._LNB_ITEM.is_active > a > span')
+    if e is not None:
+        return e.get_text(strip=True)
+    else:
+        return None
 
 def get_photo_info(soup):
     img_url = None

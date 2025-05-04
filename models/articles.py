@@ -15,5 +15,5 @@ class Articles(Base):
     img_url = Column(Text, nullable=True)
     img_desc = Column(Text, nullable=True)
     video_url = Column(Text, nullable=True)
-    category = Column(Text)
+    category = Column(Text, nullable=True)
     create_date = Column(DateTime)
