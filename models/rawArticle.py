@@ -1,11 +1,12 @@
-# models/articles.py
+# models/rawArticle.py
 from uuid import uuid4
+
 from sqlalchemy import Column, Text, DateTime
 from sqlalchemy.dialects.mysql import CHAR
 from database.db import Base
 
-class Articles(Base):
-    __tablename__ = "articles"
+class RawArticle(Base):
+    __tablename__ = "raw_article"
 
     id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid4()))
     title = Column(Text)

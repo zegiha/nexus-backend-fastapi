@@ -1,0 +1,185 @@
+{
+  "contents": [
+    {
+      "type": "subject",
+      "id": "main-title",
+      "content": "정부, 전 국민에 최대 52만원 소비쿠폰 지급 추진"
+    },
+    {
+      "type": "description",
+      "id": "main-desc",
+      "content": "정부가 고물가·내수 침체 대응을 위해 총 20조 원 규모의 국채 발행을 통해 소비쿠폰을 지급할 계획입니다. 소비 진작과 지역 경제 회복을 목적으로, 최대 52만 원까지 차등 지급됩니다."
+    },
+    {
+      "type": "subject",
+      "id": "budget-overview",
+      "content": "추경안 및 재원 배분"
+    },
+    {
+      "type": "description",
+      "id": "budget-desc",
+      "content": "이재명 대통령은 6월 19일 국무회의에서 약 30조 5천억 원 규모의 제2차 추가경정예산안을 의결했고, 이 중 11조 3천억 원을 소비 진작에 배정했습니다."
+    },
+    {
+      "type": "subject",
+      "id": "coupon-structure",
+      "content": "소비쿠폰 구성 및 차등 지급"
+    },
+    {
+      "type": "list",
+      "contents": [
+        {
+          "id": "base-amount",
+          "content": "전 국민 기본 지급액: 15만 원"
+        },
+        {
+          "id": "low-income",
+          "content": "차상위계층: 30만 원"
+        },
+        {
+          "id": "basic-living",
+          "content": "기초생활보장 수급자: 40만 원"
+        },
+        {
+          "id": "rural-bonus",
+          "content": "농어촌 소멸지역 거주자: 추가 2만 원"
+        },
+        {
+          "id": "additional-90",
+          "content": "소득 상위 10% 제외, 나머지 90%에게 추가 10만 원"
+        }
+      ]
+    },
+    {
+      "type": "footnote",
+      "id": "coupon-total",
+      "content": "최대 수령 가능 금액은 기초수급자의 경우 52만 원입니다."
+    },
+    {
+      "type": "subject",
+      "id": "coupon-usage",
+      "content": "소비쿠폰 사용 방식"
+    },
+    {
+      "type": "description",
+      "id": "usage-desc",
+      "content": "지역사랑상품권, 선불카드, 신용·체크카드 포인트 중 선택하여 지급되며, 전통시장·골목상권 가맹점 등 소상공인 업소에서만 사용 가능합니다."
+    },
+    {
+      "type": "scroll",
+      "content": "소상공인 혜택 더보기",
+      "to": "coupon-usage"
+    },
+    {
+      "type": "subject",
+      "id": "schedule",
+      "content": "지급 시기 및 전망"
+    },
+    {
+      "type": "description",
+      "id": "schedule-desc",
+      "content": "정부는 추경안 통과 후 약 2주 뒤, 빠르면 7월 중순에 1차 지급을 시작할 계획입니다. 2차 지급은 추석 이전까지 추진될 가능성이 있습니다."
+    },
+    {
+      "type": "subject",
+      "id": "additional-measures",
+      "content": "소비쿠폰 외 추가 정책"
+    },
+    {
+      "type": "list",
+      "contents": [
+        {
+          "id": "culture-coupon",
+          "content": "숙박·공연·영화 등 문화 여가 분야 할인쿠폰"
+        },
+        {
+          "id": "appliance-refund",
+          "content": "고효율 가전 구매 비용의 10% 환급 (약 30만 원)"
+        },
+        {
+          "id": "debt-adjustment",
+          "content": "소상공인 채무조정 방안"
+        }
+      ]
+    },
+    {
+      "type": "subject",
+      "id": "expectation",
+      "content": "정책 기대 효과와 선례"
+    },
+    {
+      "type": "description",
+      "id": "expectation-desc",
+      "content": "과거 긴급재난지원금처럼 골목상권 활성화와 내수 경기 반등의 마중물이 될 것으로 기대됩니다."
+    },
+    {
+      "type": "link",
+      "content": "KDI 연구: 재난지원금의 경제 효과",
+      "to": "https://www.kdi.re.kr/research/subjects_view.jsp?pub_no=15973"
+    },
+    {
+      "type": "footnote",
+      "id": "expectation-footnote",
+      "content": "2020년 긴급재난지원금은 음식점·식료품점 등에서 약 50%가 소비되었으며, 중소 점포 매출 증대에 기여했습니다."
+    },
+    {
+      "type": "subject",
+      "id": "controversy",
+      "content": "실효성과 재정 우려"
+    },
+    {
+      "type": "description",
+      "id": "controversy-desc",
+      "content": "일각에서는 보편 지급의 실효성, 물가 자극 가능성, 국가 재정 지속성에 대한 우려를 제기하고 있습니다."
+    },
+    {
+      "type": "footnote",
+      "id": "controversy-footnote",
+      "content": "보편 지급과 선별 지급 간의 효율성 논쟁이 이어지고 있습니다."
+    },
+    {
+      "type": "subject",
+      "id": "gov-position",
+      "content": "정부 입장"
+    },
+    {
+      "type": "description",
+      "id": "gov-position-desc",
+      "content": "정부는 '경제 상황과 민생의 어려움이 심각한 상황에서 재정을 적극 운영하겠다'는 입장을 밝혔습니다."
+    },
+    {
+      "type": "media",
+      "mediaType": "image",
+      "url": "https://img.korea.net/upload/content/editImage/20230612/20230612135338-7ffad8f9.jpg",
+      "description": "정부 회의에서 소비쿠폰 정책을 설명 중인 관계자들"
+    },
+    {
+      "type": "media",
+      "mediaType": "image",
+      "url": "https://pbs.twimg.com/media/GPaE7IaakAAUuHp?format=jpg&name=large",
+      "description": "기획재정부가 공개한 소비 진작 예산 개요 인포그래픽"
+    },
+    {
+      "type": "media",
+      "mediaType": "image",
+      "url": "https://ml.globenewswire.com/Resource/Download/588b2de3-dbc5-4409-bd62-3f7878a76979?size=2",
+      "description": "2025년까지의 디지털 상품권 시장 확대 전망 그래프"
+    },
+    {
+      "type": "media",
+      "mediaType": "image",
+      "url": "https://cloudfront-us-east-2.images.arcpublishing.com/reuters/OSFXQUH6GBLZ7ECFECX7KQGNTY.jpg",
+      "description": "전통시장에서 소비쿠폰 사용 중인 시민들 모습"
+    },
+    {
+      "type": "link",
+      "content": "민생회복 소비쿠폰 주요 내용 정리 (네이버 블로그)",
+      "to": "https://blog.naver.com/happy4kids/223900703342"
+    },
+    {
+      "type": "link",
+      "content": "정부24 정책 포털 – 소비쿠폰 안내",
+      "to": "https://www.gov.kr/portal/main"
+    }
+  ]
+}

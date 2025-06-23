@@ -1,32 +1,58 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from datetime import datetime
-from crawler import crawl
 from background.task import run_crawling
+from const.press.get_press import get_press
+from crew.crew import llm_processing
+from crew.llm_worker import llm_request_queue, llm_worker
+from models.create_article_dto import CreateArticleDTO
+import asyncio
 
-app = FastAPI()
+llm_worker_tasks = []
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 🔥 앱 시작 시 실행할 코드
+    print("🚀 앱 시작: LLM 워커 실행")
+    for _ in range(1):  # 워커 수 지정
+        task = asyncio.create_task(llm_worker())
+        llm_worker_tasks.append(task)
+
+    yield
+
+    # 🧹 앱 종료 시 실행할 코드
+    print("🧹 앱 종료: 워커 취소 중")
+    for task in llm_worker_tasks:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+    print("🧼 종료 완료")
+
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
-
-@app.get('/test')
-async def test():
-    data = await crawl.test('https://n.news.naver.com/mnews/article/052/0002188955')
-    return {"message": data}
+@app.post('/article')
+async def article(req: CreateArticleDTO):
+    try:
+        await llm_request_queue.put(
+            lambda: llm_processing(req.new_article, req.is_headline, req.press)
+        )
+        return {"message": "작업 큐에 등록됨"}
+    except asyncio.CancelledError as e:
+        print(e)
+        return {"error": str(e)}
 
 @app.get('/crawl/{target_date}')
 async def crawl_route(target_date: str):
     # 3사 + ytn만
-    oid = [
-        {'press': 'KBS', 'oid': '056'},
-        {'press': 'SBS', 'oid': '055'},
-        {'press': 'MBC', 'oid': '214'},
-        {'press': 'YTN', 'oid': '052'},
-    ]
+    oid = get_press()
 
     try:
         date_obj = datetime.strptime(target_date, "%Y%m%d")
