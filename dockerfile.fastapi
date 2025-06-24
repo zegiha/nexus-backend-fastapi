@@ -1,0 +1,18 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y redis-server
+
+COPY req.txt .
+RUN pip install --upgrade pip && pip install -r req.txt
+
+COPY . /app
+
+# redis-server, uvicorn, celery를 한 번에 실행할 스크립트 복사
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 8000 6379
+
+CMD ["/app/entrypoint.sh"]
